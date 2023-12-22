@@ -20,3 +20,12 @@ Layer.py 是层的类，包括
 1.  参考train.py，run.py两个代码
 2.  模型再`model\`目录下
 
+#### 模型现状
+
+<img src="README.assets/image-20231222215655332.png" alt="image-20231222215655332" style="zoom:80%;" />
+
+学习率为0.02时，训练12轮，大致收敛于99%
+
+<img src="README.assets/image-20231222215812901.png" alt="image-20231222215812901" style="zoom:80%;" />
+
+tensorboard的输出如上
