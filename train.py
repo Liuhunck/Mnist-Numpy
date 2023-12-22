@@ -64,7 +64,7 @@ def test(network: Model, loss_fn, test_loader, train_counter):
 
     test_acc /= test_acc_size
     test_loss = tot_test_loss / len(test_loader)
-    print(f"测试次数: {train_counter / 10}, Loss = {test_loss}, Acc = {test_acc}")
+    print(f"---测试次数: {train_counter}, Loss = {test_loss}, Acc = {test_acc}")
     writer.add_scalars("train", {"test_loss": test_loss, "test_acc": test_acc}, train_counter)
 
 
@@ -105,6 +105,11 @@ def cross_entropy_loss(y_hat, y):
     return loss
 
 
+def is_interactive():
+    import __main__ as main
+    return not hasattr(main, '__file__')
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train a model')
     parser.add_argument('--lr', default=0.05, type=float, help='Learning rate')
@@ -114,9 +119,10 @@ if __name__ == "__main__":
                         help='The output filename of trained weight and bias')
     parser.add_argument('--log-dir', default='./logs', type=str, help='The log-dir of tensorboard')
     args = parser.parse_args()
+
     log_dir = args.log_dir
     if os.path.exists(log_dir):
-        if click.confirm(f'The folder {log_dir} has exists, delete it? ', default=False):
+        if not is_interactive() or click.confirm(f'The folder {log_dir} has exists, delete it? ', default=False):
             shutil.rmtree(log_dir)
             print(f'The folder {log_dir} was deleted...')
         writer = SummaryWriter(log_dir)

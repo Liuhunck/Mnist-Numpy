@@ -81,5 +81,7 @@ if __name__ == '__main__':
     os.makedirs(out_path, exist_ok=True)
     for label, name, image in zip(out, image_names, images):
         name = name.split('.')
-        image.save(os.path.join(out_path, name[0] + f'-{label}.' + name[1]))
+        name = name[0] + f'-{label}.' + name[1]
+        print(f"Output {name}...")
+        image.save(os.path.join(out_path, name))
 
