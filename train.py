@@ -72,6 +72,7 @@ def train(network: Model, loss_fn, lr, train_loader, test_loader, max_epoch):
     train_counter = 0
     train_acc = 0
     train_acc_size = 0
+    network.train()
     for epoch in range(max_epoch):
         print(f"---------第 {epoch} 轮训练开始---------")
 
@@ -96,7 +97,9 @@ def train(network: Model, loss_fn, lr, train_loader, test_loader, max_epoch):
                 train_acc_size = 0
 
             if train_counter % 1000 == 0:
+                network.train(False)
                 test(network, loss_fn, test_loader, train_counter)
+                network.train()
 
 
 def cross_entropy_loss(y_hat, y):
@@ -107,29 +110,32 @@ def cross_entropy_loss(y_hat, y):
 
 def is_interactive():
     import __main__ as main
-    return not hasattr(main, '__file__')
+    return hasattr(main, '__file__')
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Train a model')
+
     parser.add_argument('--lr', default=0.05, type=float, help='Learning rate')
     parser.add_argument('--batch', default=64, type=int, help='Batch size')
     parser.add_argument('--max-epoch', default=5, type=int, help='Max training epoch')
+
     parser.add_argument('-o', '--output', default='./model/mnist.npt', type=str,
                         help='The output filename of trained weight and bias')
     parser.add_argument('--log-dir', default='./logs', type=str, help='The log-dir of tensorboard')
     args = parser.parse_args()
+    print(args)
 
     log_dir = args.log_dir
     if os.path.exists(log_dir):
-        if not is_interactive() or click.confirm(f'The folder {log_dir} has exists, delete it? ', default=False):
+        if is_interactive() and click.confirm(f'The folder {log_dir} has exists, delete it? ', default=False):
             shutil.rmtree(log_dir)
             print(f'The folder {log_dir} was deleted...')
-        writer = SummaryWriter(log_dir)
+
+    writer = SummaryWriter(log_dir)
 
     net = Model(mnist)
     train_loader, test_loader = load_data('./data', args.batch)
     train(net, cross_entropy_loss, args.lr, train_loader, test_loader, args.max_epoch)
 
     net.save(args.output)
-

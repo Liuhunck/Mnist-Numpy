@@ -30,12 +30,12 @@ class Layer:
 
 # 全连接层
 class Linear(Layer):
-    def __init__(self, n, m):
+    def __init__(self, n, m, sigma=0.01):
         super().__init__()
-        self.w = np.random.randn(n, m) * 0.01
-        self.b = np.random.randn(1, m) * 0.01
-        self.dw = np.zeros((n, m))
-        self.db = np.zeros((1, m))
+        self.w = np.random.randn(n, m) * sigma
+        self.b = np.zeros((1, m))
+        self.dw = None
+        self.db = None
         self.x = None
 
     def forward(self, x):
@@ -60,12 +60,12 @@ class Linear(Layer):
 
 # Softmax 层（包含全连接层和激活函数）
 class Softmax(Layer):
-    def __init__(self, n, m):
+    def __init__(self, n, m, sigma=0.01):
         super().__init__()
-        self.w = np.random.randn(n, m) * 0.01
-        self.b = np.random.randn(1, m) * 0.01
-        self.dw = np.zeros((n, m))
-        self.db = np.zeros((1, m))
+        self.w = np.random.randn(n, m) * sigma
+        self.b = np.zeros((1, m))
+        self.dw = None
+        self.db = None
         self.x = None
 
     @staticmethod
@@ -139,7 +139,7 @@ class ReLU(Layer):
 
 # 2维卷积层
 class Conv2d(Layer):
-    def __init__(self, input_channels, output_channels, kernel_size, stride=1, padding=0):
+    def __init__(self, input_channels, output_channels, kernel_size, stride=1, padding=0, sigma=0.01):
         """
         卷积层构造函数 数据格式CHW
         :param input_channels: 输入通道数
@@ -147,6 +147,7 @@ class Conv2d(Layer):
         :param kernel_size: 卷积核大小，可以是一个整数或一个元组（height, width）
         :param stride: 步幅大小，可以是一个整数或一个元组（height, width），默认为1
         :param padding: 填充大小，可以是一个整数或一个元组（height, width），默认为0
+        :param sigma: 初始化标准差
         """
         super().__init__()
 
@@ -154,8 +155,8 @@ class Conv2d(Layer):
         self.stride = stride if isinstance(stride, tuple) else (stride, stride)
         self.padding = padding if isinstance(padding, tuple) else (padding, padding)
 
-        self.w = np.random.randn(input_channels * self.kernel_size[0] * self.kernel_size[1], output_channels) * 0.01
-        self.b = np.random.randn(1, output_channels, 1, 1) * 0.01
+        self.w = np.random.randn(input_channels * self.kernel_size[0] * self.kernel_size[1], output_channels) * sigma
+        self.b = np.zeros((1, output_channels, 1, 1))
         self.dw = np.zeros(self.w.shape)
         self.db = np.zeros(self.b.shape)
         self.x = None
@@ -279,4 +280,21 @@ class MaxPool2d(Layer):
                 x[:, :, hs:he, ws:we] += (x_s == np.max(x_s, axis=(2, 3), keepdims=True)) * y[:, :, h:h+1, w:w+1]
 
         return x
+
+
+class Dropout(Layer):
+    def __init__(self, dropout_rate):
+        super().__init__()
+        self.dropout_rate = dropout_rate
+        self.mask = None
+
+    def forward(self, x, is_training=False):
+        if is_training:
+            self.mask = (np.random.randn(*x.shape) < self.dropout_rate) / self.dropout_rate
+            return np.multiply(x, self.mask)
+        return x
+
+    def backward(self, y):
+        return np.multiply(y, self.mask)
+
 

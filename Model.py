@@ -6,18 +6,26 @@ TASK:Model
 """
 
 import pickle
+from Layer import Dropout
 
 
 class Model:
     def __init__(self, net):
         self.net = net
+        self.is_training = False
 
     def __call__(self, x):
         return self.forward(x)
 
+    def train(self, is_training=True):
+        self.is_training = is_training
+
     def forward(self, x):
         for i in self.net:
-            x = i.forward(x)
+            if isinstance(i, Dropout):
+                x = i.forward(x, is_training=self.is_training)
+            else:
+                x = i.forward(x)
         return x
 
     def backward(self, y):

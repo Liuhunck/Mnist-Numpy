@@ -37,8 +37,10 @@ if __name__ == '__main__':
     parser.add_argument('--input', type=str, required=True, help='The image of input')
     parser.add_argument('--output', type=str, default='./run', help='The output dir')
     args = parser.parse_args()
+    print(args)
 
     net = Model(mnist)
+    net.train(False)
     model_para = args.model_para
     if os.path.isfile(model_para):
         net.load(model_para)
@@ -84,4 +86,3 @@ if __name__ == '__main__':
         name = name[0] + f'-{label}.' + name[1]
         print(f"Output {name}...")
         image.save(os.path.join(out_path, name))
-
