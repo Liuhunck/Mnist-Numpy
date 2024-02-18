@@ -298,3 +298,106 @@ class Dropout(Layer):
         return np.multiply(y, self.mask)
 
 
+class BatchNorm1d(Layer):
+    def __init__(self, num_features, eps=1e-5, momentum=0.1):
+        super().__init__()
+        self.num_features = num_features
+        self.eps = eps
+        self.momentum = momentum
+        self.running_mean = np.zeros(num_features)
+        self.running_var = np.ones(num_features)
+
+        self.w = np.ones(num_features)
+        self.b = np.zeros(num_features)
+        self.cache = None
+        self.dw = None
+        self.db = None
+
+    def forward(self, x, is_training=True):
+        if is_training:
+            mean = np.mean(x, axis=0)
+            var = np.var(x, axis=0)
+            x_normalized = (x - mean) / np.sqrt(var + self.eps)
+            out = self.w * x_normalized + self.b
+
+            self.cache = (x, x_normalized, mean, var)
+
+            # 更新 running_mean 和 running_var
+            self.running_mean = self.momentum * mean + (1 - self.momentum) * self.running_mean
+            self.running_var = self.momentum * var + (1 - self.momentum) * self.running_var
+        else:
+            x_normalized = (x - self.running_mean) / np.sqrt(self.running_var + self.eps)
+            out = self.w * x_normalized + self.b
+
+        return out
+
+    def backward(self, y):
+        x, x_normalized, mean, var = self.cache
+        m = x.shape[0]
+
+        self.dw = np.sum(y * x_normalized, axis=0) / m
+        self.db = np.sum(y, axis=0) / m
+
+        dx_normalized = y * self.w
+        dvar = np.sum(dx_normalized * (x - mean) * (-0.5) * np.power(var + self.eps, -1.5), axis=0)
+        dmean = np.sum(dx_normalized * (-1 / np.sqrt(var + self.eps)), axis=0) + dvar * np.mean(-2 * (x - mean), axis=0)
+
+        return dx_normalized / np.sqrt(var + self.eps) + dvar * 2 * (x - mean) / m + dmean / m
+
+    def update(self, alpha):
+        self.w -= alpha * self.dw
+        self.b -= alpha * self.db
+
+
+class BatchNorm2d(Layer):
+    def __init__(self, num_features, eps=1e-5, momentum=0.1):
+        super().__init__()
+        self.num_features = num_features
+        self.eps = eps
+        self.momentum = momentum
+        self.running_mean = np.zeros(num_features)
+        self.running_var = np.ones(num_features)
+
+        self.w = np.ones(num_features)
+        self.b = np.zeros(num_features)
+        self.cache = None
+        self.dw = None
+        self.db = None
+
+    def forward(self, x, is_training=True):
+        if x.ndim != 4:
+            raise ValueError("Input tensor should be 4-dimensional (N, C, H, W)")
+
+        if is_training:
+            mean = np.mean(x, axis=(0, 2, 3), keepdims=True)
+            var = np.var(x, axis=(0, 2, 3), keepdims=True)
+            x_normalized = (x - mean) / np.sqrt(var + self.eps)
+            out = self.w.reshape((1, -1, 1, 1)) * x_normalized + self.b.reshape((1, -1, 1, 1))
+
+            self.cache = (x, x_normalized, mean, var)
+
+            self.running_mean = self.momentum * self.running_mean + (1 - self.momentum) * np.squeeze(mean)
+            self.running_var = self.momentum * self.running_var + (1 - self.momentum) * np.squeeze(var)
+        else:
+            x_normalized = (x - self.running_mean.reshape(1, -1, 1, 1)) / np.sqrt(self.running_var.reshape(1, -1, 1, 1) + self.eps)
+            out = self.w.reshape((1, -1, 1, 1)) * x_normalized + self.b.reshape((1, -1, 1, 1))
+
+        return out
+
+    def backward(self, y):
+        x, x_normalized, mean, var = self.cache
+        m = x.shape[0] * x.shape[2] * x.shape[3]
+
+        self.dw = np.sum(y * x_normalized, axis=(0, 2, 3))
+        self.db = np.sum(y, axis=(0, 2, 3))
+
+        dx_normalized = y * self.w.reshape((1, -1, 1, 1))
+        dvar = np.sum(dx_normalized * (x - mean) * (-0.5) * np.power(var + self.eps, -1.5), axis=(0, 2, 3))
+        dmean = np.sum(dx_normalized * (-1 / np.sqrt(var + self.eps)), axis=(0, 2, 3)) + dvar * np.mean(-2 * (x - mean), axis=(0, 2, 3))
+
+        return dx_normalized / np.sqrt(var + self.eps) + dvar.reshape((1, -1, 1, 1)) * 2 * (x - mean) / m + dmean.reshape((1, -1, 1, 1)) / m
+
+    def update(self, alpha):
+        self.w -= alpha * self.dw
+        self.b -= alpha * self.db
+
