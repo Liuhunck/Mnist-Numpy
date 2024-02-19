@@ -13,6 +13,9 @@ Layer.py 是层的类，包括
 - Sigmoid（Sigmoid激活函数层）
 - ReLU（ReLU激活函数层）
 - Softmax（Softmax输出层，包含了一个全连接层）
+- Dorpout（Dorpout层）
+- BatchNorm1d（一维的BN层，NxC）
+- BatchNorm2d（二维的BN层，NxCxHxW）
 
 
 #### 使用说明
@@ -29,3 +32,11 @@ Layer.py 是层的类，包括
 <img src="README.assets/image-20231222215812901.png" alt="image-20231222215812901" style="zoom:80%;" />
 
 tensorboard的输出如上
+
+##### Update - 2024.2.19
+将网络中加入BatchNorm层，效果明显，学习率为0.05，训练12轮，最终正确率为99.71875%，损失函数为0.007398
+
+<img src="README.assets/image-20240219124708626.png" alt="image-20240219124708626" style="zoom:80%;" />
+
+<img src="README.assets/image-20240219124843199.png" alt="image-20240219124843199" style="zoom:80%;" />
+

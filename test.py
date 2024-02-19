@@ -2,25 +2,17 @@
 # @Time : 2024/2/18 21:28
 # @Author : liuhu
 # @File : test.py
-import torch
-from torch.nn import BatchNorm2d as BN
-import numpy as np
-from Layer import BatchNorm2d
 
-inp = np.random.randn(4, 3, 3, 3) * 0.1 + 5
-out = np.random.randn(4, 3, 3, 3) * 10
+import PIL.Image
+import torchvision
 
-bn = BatchNorm2d(3)
-oup = bn.forward(inp, is_training=True)
-dx = bn.backward(out)
+root = './data'
+test_data = torchvision.datasets.MNIST(root=root, train=False, download=True)
 
-inp1 = torch.tensor(inp, requires_grad=True)
-w = torch.tensor(out)
-bn1 = BN(3, dtype=torch.float64)
-bn1.train(True)
-oup1 = bn1.forward(inp1)
-oo = (oup1 * w).sum()
-oo.backward()
+cnt = 0
+for img, tar in test_data:
+    PIL.Image.Image.save(img, './images/%d-%d.png' % (cnt, tar))
+    cnt += 1
+    if cnt == 16:
+        break
 
-print(bn.dw)
-print(bn1.weight.grad)

@@ -388,8 +388,8 @@ class BatchNorm2d(Layer):
         x, x_normalized, mean, var = self.cache
         m = x.shape[0] * x.shape[2] * x.shape[3]
 
-        self.dw = np.sum(y * x_normalized, axis=(0, 2, 3))
-        self.db = np.sum(y, axis=(0, 2, 3))
+        self.dw = np.sum(y * x_normalized, axis=(0, 2, 3)) / m
+        self.db = np.sum(y, axis=(0, 2, 3)) / m
 
         dx_normalized = y * self.w.reshape((1, -1, 1, 1))
         dvar = np.sum(dx_normalized * (x - mean) * (-0.5) * np.power(var + self.eps, -1.5), axis=(0, 2, 3))
@@ -400,4 +400,3 @@ class BatchNorm2d(Layer):
     def update(self, alpha):
         self.w -= alpha * self.dw
         self.b -= alpha * self.db
-
